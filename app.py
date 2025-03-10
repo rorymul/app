@@ -98,7 +98,7 @@ def display_comments_section():
             st.experimental_rerun()
 
 def run_pension_simulator():
-    st.title("💰 Irish Pension Fund Simulator & Community Board")
+    st.title("💰 CUAN 💰")
     st.write("""
     Welcome to the Irish Pension Fund Simulator! Adjust your parameters below, run the simulation,
     and then share your results on the Community Board. You can also leave comments for other users!
