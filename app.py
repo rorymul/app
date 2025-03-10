@@ -5,7 +5,7 @@ import plotly.express as px
 import os
 
 # Set page configuration
-st.set_page_config(page_title="Irish Pension Simulator", page_icon="💰", layout="wide")
+st.set_page_config(page_title="App Name", page_icon="💰", layout="wide")
 
 # Custom CSS for styling
 st.markdown("""
@@ -42,7 +42,7 @@ st.markdown("""
 
 def pension_fund_simulation():
     st.markdown('<div class="main">', unsafe_allow_html=True)
-    st.title("💰 Irish Pension Fund Simulator & Community Board")
+    st.title("💰 What's Your Goal for Retirement?")
     st.write("""
     Welcome to the Irish Pension Fund Simulator! Adjust your parameters below to see
     how your pension fund might grow over time. When you're done, share your results
