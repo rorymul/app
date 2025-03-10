@@ -100,8 +100,9 @@ def display_comments_section():
 def run_pension_simulator():
     st.title("💰 CUAN: Helping you save for retirement! 💰")
     st.write("""
-    Welcome to the Irish Pension Fund Simulator! Adjust your parameters below, run the simulation,
-    and then share your results on the Community Board. You can also leave comments for other users!
+    We want to help you save for your future and allow you to retire with enough to support yourself!
+    Run our simulation and edit the parameters so you can see how much money you need to start saving and 
+    how changing your contributions in just the first 5 years of working will make a big change to potential savings!
     """)
 
     # --- User Inputs ---
