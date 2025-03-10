@@ -3,17 +3,108 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import os
+import datetime
 
+# --- Config ---
 st.set_page_config(page_title="Irish Pension Simulator", page_icon="💰", layout="wide")
 
-def pension_fund_simulation():
+# CSV filenames
+COMMUNITY_FILE = "community_data.csv"  # Stores user simulation results
+COMMENTS_FILE = "comments_data.csv"    # Stores user comments
+
+def load_community_data():
+    """Load the community data from CSV, or create an empty DataFrame if not found."""
+    if os.path.exists(COMMUNITY_FILE):
+        return pd.read_csv(COMMUNITY_FILE)
+    else:
+        return pd.DataFrame(columns=[
+            "Username",
+            "Final Balance (Increased)",
+            "Final Balance (Fixed)",
+            "Target Savings",
+            "Year Reached Target"
+        ])
+
+def save_community_data(df):
+    df.to_csv(COMMUNITY_FILE, index=False)
+
+def load_comments_data():
+    """Load the comments data from CSV, or create an empty DataFrame if not found."""
+    if os.path.exists(COMMENTS_FILE):
+        return pd.read_csv(COMMENTS_FILE)
+    else:
+        return pd.DataFrame(columns=[
+            "Timestamp",
+            "Commenter",
+            "TargetUser",
+            "Comment"
+        ])
+
+def save_comments_data(df):
+    df.to_csv(COMMENTS_FILE, index=False)
+
+def display_community_board():
+    """Display the community board with all user results."""
+    st.markdown("## Community Board")
+
+    community_df = load_community_data()
+    if community_df.empty:
+        st.info("No community data found yet. Run a simulation and share your results to populate the board!")
+    else:
+        st.dataframe(community_df.style.format("{:,.2f}"))
+
+def display_comments_section():
+    """Display the comments section where users can see and post comments."""
+    st.markdown("## Discussion & Comments")
+
+    # Load existing community data and comments
+    community_df = load_community_data()
+    comments_df = load_comments_data()
+
+    if community_df.empty:
+        st.info("No users in the community board yet. Run a simulation and share results first!")
+        return  # Can't post comments if no users
+
+    # Show existing comments
+    st.subheader("All Comments")
+    if comments_df.empty:
+        st.info("No comments yet. Be the first to comment!")
+    else:
+        # Sort comments by timestamp (descending) so newest appear on top
+        comments_df = comments_df.sort_values(by="Timestamp", ascending=False)
+        st.table(comments_df)
+
+    st.subheader("Add a New Comment")
+    commenter_name = st.text_input("Your name (or nickname):", "Anonymous")
+    # Let user pick which community member they want to comment on
+    target_user = st.selectbox("Which user do you want to comment on?", community_df["Username"].unique())
+    comment_text = st.text_area("Your comment here:")
+
+    if st.button("Post Comment"):
+        if not comment_text.strip():
+            st.warning("Please enter a comment before posting.")
+        else:
+            # Create a new record
+            new_comment = {
+                "Timestamp": datetime.datetime.now().isoformat(timespec='seconds'),
+                "Commenter": commenter_name,
+                "TargetUser": target_user,
+                "Comment": comment_text
+            }
+            comments_df = comments_df.append(new_comment, ignore_index=True)
+            save_comments_data(comments_df)
+            st.success("Your comment has been posted!")
+            # Refresh comments display
+            st.experimental_rerun()
+
+def run_pension_simulator():
     st.title("💰 Irish Pension Fund Simulator & Community Board")
     st.write("""
-    Welcome to the Irish Pension Fund Simulator! Adjust your parameters below and run
-    the simulation. You can then share your results with the community board below.
+    Welcome to the Irish Pension Fund Simulator! Adjust your parameters below, run the simulation,
+    and then share your results on the Community Board. You can also leave comments for other users!
     """)
 
-    # --- User inputs ---
+    # --- User Inputs ---
     col1, col2, col3 = st.columns(3)
     with col1:
         starting_salary = st.number_input("Starting Salary (€):", value=50000.0, step=1000.0)
@@ -33,21 +124,12 @@ def pension_fund_simulation():
 
     target_savings = st.number_input("Target Retirement Savings (€):", value=1000000.0, step=50000.0)
 
-    # --- Always Show Community Board ---
-    st.markdown("## Current Community Results")
-    community_file = "community_data.csv"
-    if os.path.exists(community_file):
-        # If we already have data, show it right away
-        loaded_community_df = pd.read_csv(community_file)
-        st.dataframe(loaded_community_df.style.format("{:,.2f}"))
-    else:
-        st.info("No community data found yet. Run a simulation and share your results to populate the board!")
-    
-    st.markdown("---")
+    # --- Show Community Board right away ---
+    display_community_board()
 
-    # --- Run Simulation ---
+    st.markdown("---")
     if st.button("🚀 Run Simulation"):
-        # (Same simulation code as before)
+        # --- Simulation Logic ---
         years_list = [0]
         salary_list = [starting_salary]
         annual_contribution_list = [pension_contribution_rate * starting_salary]
@@ -147,26 +229,15 @@ def pension_fund_simulation():
             st.info("Target not reached. Keep saving and refining your plan!")
 
         # Let user share results on the community board
-        st.markdown("### Share Your Results with the Community")
+        st.markdown("### Share Your Results")
         username = st.text_input("Enter a username/nickname:", "Anonymous")
 
         final_balance_increased = df["Pension Balance After Fees (€) (Increased Contributions)"].iloc[-1]
         final_balance_fixed = df["Pension Balance After Fees (€) (Fixed Contributions)"].iloc[-1]
         year_reached = milestone_year if milestone_found else None
 
-        if st.button("Add My Results"):
-            # Load existing data if any
-            if os.path.exists(community_file):
-                community_df = pd.read_csv(community_file)
-            else:
-                community_df = pd.DataFrame(columns=[
-                    "Username",
-                    "Final Balance (Increased)",
-                    "Final Balance (Fixed)",
-                    "Target Savings",
-                    "Year Reached Target"
-                ])
-
+        if st.button("Add My Results to the Board"):
+            community_df = load_community_data()
             new_record = {
                 "Username": username,
                 "Final Balance (Increased)": final_balance_increased,
@@ -175,15 +246,16 @@ def pension_fund_simulation():
                 "Year Reached Target": year_reached
             }
             community_df = community_df.append(new_record, ignore_index=True)
-            community_df.to_csv(community_file, index=False)
+            save_community_data(community_df)
             st.success("Your results have been added to the community board!")
+            st.experimental_rerun()
 
-            # Immediately show the updated board
-            loaded_community_df = pd.read_csv(community_file)
-            st.dataframe(loaded_community_df.style.format("{:,.2f}"))
+    # --- Comments Section (Always visible) ---
+    st.markdown("---")
+    display_comments_section()
 
 def main():
-    pension_fund_simulation()
+    run_pension_simulator()
 
 if __name__ == '__main__':
     main()
