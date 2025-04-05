@@ -239,7 +239,7 @@ def run_pension_simulator():
         fig.update_layout(yaxis_tickformat=",")
         st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("🏆 Gamification & Milestones")
+        st.subheader("🏆 Milestones")
         if milestone_found:
             st.success(f"Congratulations! You reached your target of €{target_savings:,.2f} in year {milestone_year}!")
             st.balloons()
